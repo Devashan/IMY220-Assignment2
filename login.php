@@ -56,7 +56,7 @@ $pass = isset($_POST["loginPass"]) ? $_POST["loginPass"] : false;
 
 				echo 	"<form method='POST' enctype='multipart/form-data'>
 								<div class='form-group'>
-									<input type='file' class='form-control' name='picToUpload' id='picToUpload' /><br/>
+									<input type='file' class='form-control' name='picToUpload[]' id='picToUpload' multiple='multiple'/><br/>
 									<input type='submit' class='btn btn-standard' value='Upload Image' name='submit' />
 									<input type='hidden' class='form-control' name='loginEmail' id='loginEmail' value='"  . $email .  "' /><br/>
 									<input type='hidden' class='form-control' name='loginPass' id='loginPass' value='"  . $pass .  "' /><br/>
@@ -83,35 +83,37 @@ $pass = isset($_POST["loginPass"]) ? $_POST["loginPass"] : false;
 			$emailAddress = $_POST["loginEmail"];
 			$password = $_POST["loginPass"];
 			$fileToUpload = $_FILES["picToUpload"];
-			$fileType = $fileToUpload["type"];
-			$fileName = $fileToUpload['name'];
-			$tempFile = $fileToUpload['tmp_name'];
-			$fileSize = $fileToUpload['size'];
-			$allowedExtensions = array('image/jpeg', 'image/jpg');
-			$targetDirectory = "gallery/";
-			$finalFilePath = $targetDirectory . $fileName;
-			if (!$fileName) {
-				$errors[] = "Error: No file uploaded, please choose a file to upload.";
-			}
-			if ((in_array($fileType,  $allowedExtensions)) === false) {
-				$errors[] = "Error: Extension not allowed, please choose a file with a .jpg or .jpeg extension.";
-			}
-			if ($file_size > 1000000) {
-				$errors[]  =  'Error: File is too big, the file size must be less than 1 MB';
-			}
-			if (empty($errors)  ==  true) {
-				move_uploaded_file($tempFile,  $finalFilePath);
-				$query = "INSERT INTO tbgallery(user_id,filename) VALUES ('$userID','$fileName')";
-				$res = $mysqli->query($query);
-				echo $mysqli->error;
-				if (!$res) {
-					echo '<div class="alert alert-danger mt-3" role="alert">Error: Image could not be added '  .  $res  .  ' </div>';
+			$total = count($_FILES['picToUpload']['name']);
+			for( $i=0 ; $i < $total ; $i++ ) {
+				$fileType = $fileToUpload["type"][$i];
+				$fileName = $fileToUpload['name'][$i];
+				$tempFile = $fileToUpload['tmp_name'][$i];
+				$fileSize = $fileToUpload['size'][$i];
+				$allowedExtensions = array('image/jpeg', 'image/jpg');
+				$targetDirectory = "gallery/";
+				$finalFilePath = $targetDirectory . $fileName;
+				if (!$fileName) {
+					$errors[] = "Error: No file uploaded, please choose a file to upload.";
 				}
-			} else {
-				for ($i  =  0; $i < sizeof($errors); $i++) {
-					echo '<div class="alert alert-danger mt-3" role="alert">
-	  						'  . $errors[$i] .
-						'</div>';
+				if ((in_array($fileType,  $allowedExtensions)) === false) {
+					$errors[] = "Error: Extension not allowed, please choose a file with a .jpg or .jpeg extension.";
+				}
+				if ($file_size > 1000000) {
+					$errors[]  =  'Error: File is too big, the file size must be less than 1 MB';
+				}
+				if (empty($errors)  ==  true) {
+					move_uploaded_file($tempFile,  $finalFilePath);
+					$query = "INSERT INTO tbgallery(user_id,filename) VALUES ('$userID','$fileName')";
+					$res = $mysqli->query($query);
+					if (!$res) {
+						echo '<div class="alert alert-danger mt-3" role="alert">Error: Image could not be added - '  .  $mysqli->error  .  ' </div>';
+					}
+				} else {
+					for ($i  =  0; $i < sizeof($errors); $i++) {
+						echo '<div class="alert alert-danger mt-3" role="alert">
+									'  . $errors[$i] .
+							'</div>';
+					}
 				}
 			}
 		}
